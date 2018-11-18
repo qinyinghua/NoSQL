@@ -9,36 +9,36 @@
   Partition tolerance in CAP means the ability of NoSQL Database system to continue processing data - 
   even if a network partition causes communication errors between subsystems. 
   
-  ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/docImages/CAP.png)
-  
   Based on the reference artical, we made following hypothesis. The experiments would be built based on this.
   
       1) When network is healthy, the CP NoSQL Database Mongo and AP NoSQL Database Cassandra can be both consistent and available.
       
       2) When "network partition" occurs, messages are dropped, CP NoSQL Database would
           -- be able to keep "consistency" / "linearizability" 
-          -- not be able to keep all nodes "availability" - would reject some requests on some nodes.  
+          -- not be able to keep all nodes "availability" 
+          -- would reject some requests on some nodes.  
       
       3) When "network partition" occurs, messages are dropped, AP NoSQL Database would
-          -- not be able to keep "consistency" / "linearizability" - different nodes can disagree about the order in which operations took place.
+          -- not be able to keep "consistency" / "linearizability" 
+          -- different nodes can disagree about the order in which operations took place.
           -- be able to keep all nodes "availability" - can handle requests on all nodes.  
 
 ## Network Partitions
 
-    A network partition is about: 
-    
-        1) network decomposition into relatively independent subnets for their separate optimization
-        2) network split due to the failure of network devices. 
-    
-    In both cases the partition-tolerant behavior of subnets is expected.
-    
-    In this project, to manually trigger a network partition, I would deploy the NoSQL database cluster acrossing a WAN connection. 
-    Amazon EC2 Availability Azones are in different physical locations. 
-    While looking at the Amazon EC2 Server Region speeds, 
-    the highest latency would be between Asia Singapore datacenter and Europe Sao Paulo datacenter. 
-    
-    It is possible Amazon has good the network connection among all those Availability Zones so the network partitions won't happen. 
-    If that is the case, I would use a WAN simulation tools to simulate the network latency between two networks. 
+  A network partition is about: 
+  
+      1) network decomposition into relatively independent subnets for their separate optimization
+      2) network split due to the failure of network devices. 
+  
+  In both cases the partition-tolerant behavior of subnets is expected.
+  
+  In this project, to manually trigger a network partition, I would deploy the NoSQL database cluster acrossing a WAN connection. 
+  Amazon EC2 Availability Azones are in different physical locations. 
+  While looking at the Amazon EC2 Server Region speeds, 
+  the highest latency would be between Asia Singapore datacenter and Europe Sao Paulo datacenter. 
+  
+  It is possible Amazon has good the network connection among all those Availability Zones so the network partitions won't happen. 
+  If that is the case, I would use a WAN simulation tools to simulate the network latency between two networks. 
 
 
 ## Mongo Cluster Experiements and Results
