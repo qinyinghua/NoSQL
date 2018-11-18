@@ -1,4 +1,4 @@
-# CMPE281 - Personal NoSql Project
+# CMPE281 - Personal NoSql Project - Instruction
 
 ## Requirements 
 
@@ -31,7 +31,6 @@ Network Partition
 	Make sure to note your approach to creating a "network partition" for experiments.
 
 Experiments / Test Cases for Mongo
-	CP:
 		How does the system function during normal mode (i.e. no partition)
 		What happens to the master node during a partition? 
 		Can stale data be read from a slave node during a partition?
@@ -40,7 +39,7 @@ Experiments / Test Cases for Mongo
 Results
 	Results to be added here.
 
-## Mongo Cluster Experiements and Results
+## Cassandra Cluster Experiements and Results
 
 Setup
 	Select CP NoSQL Databsase Cassandra cluster as AWS EC2 Instnaces. 
@@ -49,7 +48,6 @@ Network Partition
 	Make sure to note your approach to creating a "network partition" for experiments.
 
 Experiments / Test Cases for Mongo
-	AP:
 		How does the system function during normal mode (i.e. no partition)
 		What happens to the nodes during a partition? 
 		Can stale data be read from a node during a partition?
