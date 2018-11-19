@@ -25,9 +25,19 @@
       
 ## Mongo Cluster with Sharding Network Partition Experiements and Results
 
-  Deployment architecture of MongoDB as CP. 
-  
-  Each shard-x will have 3 nodes to form a replica set. 
+I refer to the official document to install the MongoDB 3.6 shard clustering, [https://docs.mongodb.com/v3.6/tutorial/convert-replica-set-to-replicated-shard-cluster/](https://docs.mongodb.com/v3.6/tutorial/convert-replica-set-to-replicated-shard-cluster/).
+Here is the architecture of the clustering and the relative running 10 EC2 nodes.
+## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/mongodb-cluster-diagram.png)
+ 
+## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/00_10_nodes_in_mongoCluster.gif)
+
+  Deployment architecture - MongoDB Cluster. 
+
+  The cluster contains 2 shards - each shard is a replica set containing 3 nodes - installed as EC2 instances.
+
+  The cluster contains 1 config server replica set which has 3 nodes - installed as EC2 instances.
+
+  The cluster contains 1 Mongo Query Router - installed as EC2 instance. 
   
   ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/docImages/MongoDeploy.png)
 
@@ -216,7 +226,52 @@
   
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/12_mongodb_queryRouter_shardingStatus.gif)
 
-## 8.  Test the Shard Cluster with 1M data
+## 8.  Create Data Collection in MongoDB Cluster with Sharding 
+
+Create the data collection. 
+
+Go to Mongo Query Router, run:
+  
+    mongo localhost:27017/admin 
+    use cmpe281B
+    db.createCollection("bios")
+  
+    >> Insert data
+  
+    mongo localhost:27017/cmpe281B ~/bios.js
+  
+    db.bios.find( { "name.first": "John" } )
+  
+I choose the last name as the shading key. Here is the consideration: 
+
+- Must have values for each record
+- Have values that are evenly distributed among all documents
+- Group documents that are often accessed at the same time into contiguous chunks
+- Effective distribution of activity among shards
+
+When query those example data, the first name and last name are two keys having values for each record. 
+
+"Last Name" would be the good one which have values that are evenly distributed among all documents. 
+
+This is a hash based partitioning. Data is partitioned into chunks using a hash function. 
+
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/shardingBonus/hashKey.gif)
+
+Go to Mongo Query Router, run:
+
+    sh.enableSharding( "cmpe281B" )
+    db.bios.ensureIndex({"name.last": "hashed"})
+    sh.shardCollection("cmpe281B.bios", { "name.last": "hashed"} )
+  
+    db.stats()  
+
+  I tried 10000 data. The shard doesn't look balance. 
+
+  Result after loading 1K data:
+  
+  ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/15_mongodb_shard_sharded_status_db1.gif)
+
+  Interestingly, after inserting 1M data, the shards seems become balance automatically and works as design.  
 
   It works and shows balance in two data Replica Sets (rs0 and rs1).
 
@@ -238,13 +293,6 @@
     }
     bulk.execute();
   
-  Before inserting the 1M data, I try 10000 data. The shard doesn't look balance. 
-  
-  Result after loading 1K data:
-  
-  ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/15_mongodb_shard_sharded_status_db1.gif)
-
-  However, after Insert 1M data, the shard works as design.  
   
   Result after loading 1M data:
   
