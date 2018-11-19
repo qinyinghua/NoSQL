@@ -89,7 +89,7 @@
 
 1) Update the slave nodes
 
-#update to add "--shardsvr" option: mongod --replSet "rs0" --shardsvr --port 27017  
+  update to add "--shardsvr" option: mongod --replSet "rs0" --shardsvr --port 27017  
                       
     sudo vi /lib/systemd/system/mongodb.service 
         ExecStart=/usr/bin/mongod --shardsvr --port 27017 --replSet "rs0" --bind_ip localhost,10.0.2.192 --unixSocketPrefix=${SOCKETPATH} --config ${CONF} $DAEMON_OPTS
@@ -99,8 +99,10 @@
                            
 2) Udate the master node
 
-    sudo vi /lib/systemd/system/mongodb.service 
-        ExecStart=/usr/bin/mongod --shardsvr --port 27017 --replSet "rs0" --bind_ip localhost,10.0.2.192 --unixSocketPrefix=${SOCKETPATH} --config ${CONF} $DAEMON_OPTS
+    sudo vi /lib/systemd/system/mongodb.service
+    
+      ExecStart=/usr/bin/mongod --shardsvr --port 27017 --replSet "rs0" --bind_ip localhost,10.0.2.192 --unixSocketPrefix=${SOCKETPATH} --config ${CONF} $DAEMON_OPTS
+    
     sudo systemctl daemon-reload
     sudo systemctl restart mongodb
     sudo systemctl status mongodb      
@@ -301,33 +303,37 @@
   
   Result: It is not allowed to insert into slave nodes. 
   
-  1) Insert a record to the node #2 (secondary/slave). 
-        use cmpe281B
-        // insert bio - Tim2 Foo
-        db.bios.insert(
-        {
-        "name" : {
-            "first" : "Tim2",
-            "last" : "Foo"
-        },
-        "birth" : ISODate("1985-05-19T04:00:00Z"),
-        "contribs" : [
-            "C"
-        ],
-        "awards" : [
-            {
-                "award" : "The Economist Innovation Award",
-                "year" : 2003,
-                "by" : "The Economist"
-            }
-        ]})   
+  Step 1: Insert a record to the node #2 (secondary/slave). 
+            
+      use cmpe281B
+      
+      // insert bio - Tim2 Foo
+      
+      db.bios.insert(
+      {
+	      "name" : {
+		      "first" : "Tim2",
+		      "last" : "Foo"
+	      },
+	      "birth" : ISODate("1985-05-19T04:00:00Z"),
+	      "contribs" : [
+		      "C"
+	      ],
+	      "awards" : [
+		      {
+		      "award" : "The Economist Innovation Award",
+		      "year" : 2003,
+		      "by" : "The Economist"
+	      }
+	      ]})   
 
-  2) Query the record at node #1, node #2 and node #3. 
+  Step 2: Query the record at node #1, node #2 and node #3. 
    
-        rs.slaveOk()
-        use cmpe281B
-        db.bios.find( { "name.first": "Tim2" } )
-        db.stats()  
+      rs.slaveOk()
+      
+      use cmpe281B
+      
+      db.bios.find( { "name.first": "Tim2" } )
    
  ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/good-network-insert-at-slave-not-work.png)
 
@@ -346,7 +352,7 @@
   
   Insert data on one node, query the data on all three nodes. 
   
-  1) Insert a record to the node #1 (Master / Primary). 
+  Step 1: Insert a record to the node #1 (Master / Primary). 
   
         use cmpe281B
         // insert bio - Tim3 Foo
@@ -368,11 +374,11 @@
             }
         ]})   
 
-  2) Check the replica set status to see if network partition happens or not. 
+  Step 2: Check the replica set status to see if network partition happens or not. 
   
   Go into the mongo slave nodes. One of the slave node became the master now. See screen capture. 
   
-  3) On the new master node, update the data. 
+  Step 3: On the new master node, update the data. 
   
       use cmpe281B
       db.bios.update(
@@ -380,7 +386,7 @@
       {$set: { "name.first" : "Tim_Updated"}});
 
    
-  4) Query the record at node #1 (previous master but now partition), node #2 (new master) and node #3. 
+  Step 4: Query the record at node #1 (previous master but now partition), node #2 (new master) and node #3. 
          
       use cmpe281B
       db.bios.find( { "name.first": "Tim" } )  
