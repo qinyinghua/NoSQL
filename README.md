@@ -40,23 +40,23 @@
   Install Mongo on EC2 Instance
   
   Select the mongodb version, officially ubuntu (the EC2 node's OS) supports Mongodb 3.6.
+  
     sudo apt update
-		sudo apt install mongodb
-		sudo systemctl start mongodb
-		sudo systemctl status mongodb
-		mongod --version
+    sudo apt install mongodb
+    sudo systemctl start mongodb
+    sudo systemctl status mongodb
+    mongod --version
 				
   Install Mongo Replica Set - rs0
   
   Update the mongodb.service file to add " --replSet "rs0" --bind_ip localhost,10.0.2.118 "  
-  
   (replace the 10.0.2.118 with the EC2 instance private IP)
   
-		sudo vi /lib/systemd/system/mongodb.service
-	     ExecStart=/usr/bin/mongod  --replSet "rs0" --bind_ip localhost,10.0.2.118 --unixSocketPrefix=${SOCKETPATH} --config ${CONF} $DAEMON_OPTS
-		sudo systemctl daemon-reload
-		sudo systemctl restart mongodb
-		sudo systemctl status mongodb
+    sudo vi /lib/systemd/system/mongodb.service
+    ExecStart=/usr/bin/mongod  --replSet "rs0" --bind_ip localhost,10.0.2.118 --unixSocketPrefix=${SOCKETPATH} --config ${CONF} $DAEMON_OPTS
+    sudo systemctl daemon-reload
+    sudo systemctl restart mongodb
+    sudo systemctl status mongodb
 		
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/2b_instance_mongodb_up_version.gif)		
   
@@ -87,7 +87,7 @@
 
 ## 3.  Covert the Replica Sets into two Shards
 
-1) start from secondary node:
+1) Update the slave nodes
 
 #update to add "--shardsvr" option: mongod --replSet "rs0" --shardsvr --port 27017  
                       
@@ -97,7 +97,7 @@
     sudo systemctl restart mongodb
     sudo systemctl status mongodb  
                            
-2)update for primary node
+2) Udate the master node
 
     sudo vi /lib/systemd/system/mongodb.service 
         ExecStart=/usr/bin/mongod --shardsvr --port 27017 --replSet "rs0" --bind_ip localhost,10.0.2.192 --unixSocketPrefix=${SOCKETPATH} --config ${CONF} $DAEMON_OPTS
@@ -116,7 +116,7 @@
     sudo apt update
     sudo apt install mongodb
     
-  #Modify the mongodb.servie to add "--configsvr --replSet configReplSet --port 27019 --bind_ip localhost,10.0.2.116"
+  Modify the mongodb.servie to add "--configsvr --replSet configReplSet --port 27019 --bind_ip localhost,10.0.2.116"
   
   (replace the 10.0.2.116 with the node private IP)
   
@@ -216,9 +216,9 @@
 
 ## 8.  Test the Shard Cluster with 1M data
 
-  It works and show balance in two data Replica Sets (rs0 and rs1).
+  It works and shows balance in two data Replica Sets (rs0 and rs1).
 
-  Insert data for shard test
+  Insert data for shard test.
   
     db.createCollection("shardTest")
     var bulk = db.shardTest.initializeUnorderedBulkOp();
@@ -236,19 +236,19 @@
     }
     bulk.execute();
   
-  Before the 1M data, I try 10000 data. The shard doesn't look balance. 
+  Before inserting the 1M data, I try 10000 data. The shard doesn't look balance. 
   
   Result after loading 1K data:
   
   ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/15_mongodb_shard_sharded_status_db1.gif)
 
-  However, after Insert 1M data, the shard works as design.  See the screen capture #2-Result after loading 1M data.
+  However, after Insert 1M data, the shard works as design.  
   
   Result after loading 1M data:
   
   ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/16_mongodb_shard_sharded1Mdata_dbstatus_rs0_rs1_balance.gif)
   
-## 9.  Test the network partitions
+## 9.  Test Mongo Cluster without Network Partition
    
 ### Test Case #1: Test the data query without network partition happen - Insert data at Master Node
    
@@ -331,6 +331,8 @@
    
  ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/good-network-insert-at-slave-not-work.png)
 
+## 10.  Test Mongo Cluster with Network Partition Happening
+
 ### Test Case #3: Test the data query with network partition happen - Insert data at Master Node
    
   Use the shard rs0 to test the network partition. 
@@ -339,11 +341,13 @@
   
   Create a network partition - Using below command line to have iptable drop all incoming message. 
   
-  sudo iptables -A INPUT -s 10.0.2.0/24 -j DROP
+      sudo iptables-save > $HOME/firewall.txt
+      sudo iptables -A INPUT -s 10.0.2.0/24 -j DROP
   
   Insert data on one node, query the data on all three nodes. 
   
   1) Insert a record to the node #1 (Master / Primary). 
+  
         use cmpe281B
         // insert bio - Tim3 Foo
         db.bios.insert(
@@ -369,35 +373,39 @@
   Go into the mongo slave nodes. One of the slave node became the master now. See screen capture. 
   
   3) On the new master node, update the data. 
-   
-        rs.slaveOk()
-        
-        On the new master node, update the data. 
-        
-         use cmpe281B
-         db.bios.update(
-          {"name.first" : "Tim"},
-          {$set: { "name.first" : "Tim_Updated"}});
+  
+      use cmpe281B
+      db.bios.update(
+      {"name.first" : "Tim"},
+      {$set: { "name.first" : "Tim_Updated"}});
 
    
   4) Query the record at node #1 (previous master but now partition), node #2 (new master) and node #3. 
          
-         use cmpe281B
-         db.bios.find( { "name.first": "Tim" } )  
-         db.bios.find( { "name.first": "Tim_Updated" } )
+      use cmpe281B
+      db.bios.find( { "name.first": "Tim" } )  
+      db.bios.find( { "name.first": "Tim_Updated" } )
 
   Result:
   
   - When the network partition happen, one of the slave nodes will be elected as master. 
-  
   - After updated the data on the new master, the new master and the slave data are consisitant
-  
-  - The stale data at old master can still be access if direct access the old master      
+  - The stale data at old master can still be accessed if direct access the old master      
+
+One of the slave nodes will be elected as master. 
 
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/bad-network-form.png)
+
+The new master and the slave data are consisitant
+
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/bad-network-rs-status-at-new-master.png)
+
+The stale data at old master can still be accessed if direct access the old master 
+
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/bad-network-rs-status-at-old-master.png)
          
+## 11.  Test Mongo Cluster with Network Partition Recovery
+
 ### Test Case #4: Test the data query after fixed/recovered network partition 
    
   Use the shard rs0 to test the network partition. 
@@ -406,7 +414,7 @@
   
   Recover the network partition - use below command line to recover the iptable drop
 
-      sudo iptables -A INPUT -j REJECT 
+      sudo  iptables-restore < $HOME/firewall.txt
      
   Insert data on one node, query the data on all three nodes. 
      
@@ -451,3 +459,13 @@
   
   In this project, to manually trigger a network partition, I use the iptable to drop message from a given network segement.  
 
+  Create a network partition - Using below command line to have iptable drop all incoming message. 
+  
+      sudo iptables-save > $HOME/firewall.txt
+      sudo iptables -A INPUT -s 10.0.2.0/24 -j DROP
+      
+  
+  Recover the network partition - use below command line to recover the iptable.
+
+      sudo  iptables-restore < $HOME/firewall.txt
+      
