@@ -228,7 +228,7 @@ Here is the architecture of the clustering and the relative running 10 EC2 nodes
 
 ## 8.  Create Data Collection in MongoDB Cluster with Sharding 
 
-Create the data collection. 
+Create the bios data collection. 
 
 Go to Mongo Query Router, run:
   
@@ -255,49 +255,18 @@ When query those example data, the first name and last name are two keys having 
 
 This is a hash based partitioning. Data is partitioned into chunks using a hash function. 
 
-![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/shardingBonus/hashKey.gif)
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/shardingBonus/hashKey.png)
 
 Go to Mongo Query Router, run:
 
     sh.enableSharding( "cmpe281B" )
     db.bios.ensureIndex({"name.last": "hashed"})
     sh.shardCollection("cmpe281B.bios", { "name.last": "hashed"} )
-  
     db.stats()  
 
-  I tried 10000 data. The shard doesn't look balance. 
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/shardingBonus/bios2_Hashindex_lastName_work.gif)
 
-  Result after loading 1K data:
-  
-  ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/15_mongodb_shard_sharded_status_db1.gif)
-
-  Interestingly, after inserting 1M data, the shards seems become balance automatically and works as design.  
-
-  It works and shows balance in two data Replica Sets (rs0 and rs1).
-
-  Insert data for shard test.
-  
-    db.createCollection("shardTest")
-    var bulk = db.shardTest.initializeUnorderedBulkOp();
-    var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
-    var rnum1 ="";
-    var rnum2 ="";
-    people = ["Marc", "Bill", "George", "Eliot", "Matt", "Trey", "Tracy", "Greg", "Steve", "Kristina", "Katie", "Jeff"];
-    for(var i=0; i<1000000; i++){
-       user_id = i;
-       rnum1 = Math.floor(Math.random() * chars.length);
-       rnum2 = Math.floor(Math.random() * chars.length);
-       name = "_"+people[Math.floor(Math.random()*people.length)]+"_"+rnum1+rnum2;
-       number = Math.floor(Math.random()*10001);
-       bulk.insert( { "user_id":user_id, "name":name, "number":number });
-    }
-    bulk.execute();
-  
-  
-  Result after loading 1M data:
-  
-  ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/16_mongodb_shard_sharded1Mdata_dbstatus_rs0_rs1_balance.gif)
-  
+ 
 ## 9.  Test Mongo Cluster without Network Partition
    
 ### Test Case #1: Test the data query without network partition happen - Insert data at Master Node
@@ -484,6 +453,45 @@ The stale data at old master can still be accessed if direct access the old mast
 
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/bad-network-recovered-data-consistent.png)
  
+## 12.  WOW Factors - Script to Generate 1M Data and Test Sharding Balance
+
+  I used a script to insert data for shard test.
+  
+    db.createCollection("shardTest")
+    var bulk = db.shardTest.initializeUnorderedBulkOp();
+    var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+    var rnum1 ="";
+    var rnum2 ="";
+    people = ["Marc", "Bill", "George", "Eliot", "Matt", "Trey", "Tracy", "Greg", "Steve", "Kristina", "Katie", "Jeff"];
+    for(var i=0; i<1000000; i++){
+       user_id = i;
+       rnum1 = Math.floor(Math.random() * chars.length);
+       rnum2 = Math.floor(Math.random() * chars.length);
+       name = "_"+people[Math.floor(Math.random()*people.length)]+"_"+rnum1+rnum2;
+       number = Math.floor(Math.random()*10001);
+       bulk.insert( { "user_id":user_id, "name":name, "number":number });
+    }
+    bulk.execute();
+  
+Create an index on the shard key. We will use "number" as shard key.
+
+    db.shardTest.createIndex( { number : 1 } )
+    sh.shardCollection( "cmpe281.shardTest", { "number" : 1 } )
+
+Check status.
+
+    sh.status()
+    db.stats()
+    db.printShardingStatus()
+
+  Interestingly, after inserting 1M data, the shards seems become balance automatically and works as design.  
+
+  It works and shows balance in two data Replica Sets (rs0 and rs1).
+  
+  Result after loading 1M data:
+  
+  ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/16_mongodb_shard_sharded1Mdata_dbstatus_rs0_rs1_balance.gif)
+
 ## Cassandra Cluster Experiements and Results
 
 	Setup
