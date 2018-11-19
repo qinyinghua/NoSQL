@@ -39,13 +39,16 @@
   
   It is possible Amazon has good the network connection among all those Availability Zones so the network partitions won't happen. 
   If that is the case, I would use a WAN simulation tools to simulate the network latency between two networks. 
+  
+  Another approach is to use the Security Group to disable the port connection between nodes. 
+  This would be the most simple way to generate a network partition. 
 
 
 ## Mongo Cluster Experiements and Results
 
 	Mongo Cluster with Sharding Setup
-    https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/MongoClusterSharding.md
-    ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/docImages/MongoDeploy.png)
+  https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/MongoClusterSharding.md
+  ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/docImages/MongoDeploy.png)
 
 	Network Partition
 		Make sure to note your approach to creating a "network partition" for experiments.
