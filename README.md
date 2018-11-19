@@ -35,35 +35,28 @@
   Szie: t2.micro (Variable ECUs, 1 vCPUs, 2.5 GHz, Intel Xeon Family, 1 GiB memory, EBS only)  
 
   Install Mongo on EC2 Instance
-
-		Select the mongodb version, as official ubuntu (the EC2 node's OS) supports Mongodb 3.6, it is better to use the version, instead of 4.0.
-  
-		sudo apt update
+  Select the mongodb version, as official ubuntu (the EC2 node's OS) supports Mongodb 3.6, it is better to use the version, instead of 4.0.
+    sudo apt update
 		sudo apt install mongodb
 		sudo systemctl start mongodb
 		sudo systemctl status mongodb
 		mongod --version
-		
 				
-  Install Mongo Replica Set rs0
-  
-		Update the mongodb.service file to add " --replSet "rs0" --bind_ip localhost,10.0.2.118 "  
-		(replace the 10.0.2.118 with the EC2 instance private IP)
-		
+  Install Mongo Replica Set - rs0
+  Update the mongodb.service file to add " --replSet "rs0" --bind_ip localhost,10.0.2.118 "  
+  (replace the 10.0.2.118 with the EC2 instance private IP)
 		sudo vi /lib/systemd/system/mongodb.service
 	     ExecStart=/usr/bin/mongod  --replSet "rs0" --bind_ip localhost,10.0.2.118 --unixSocketPrefix=${SOCKETPATH} --config ${CONF} $DAEMON_OPTS
 		sudo systemctl daemon-reload
 		sudo systemctl restart mongodb
 		sudo systemctl status mongodb
 		
-## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/2b_instance_mongodb_up_version.gif)		
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/2b_instance_mongodb_up_version.gif)		
   
 ## 2. Initiate the Mongo replica set
 
   Connect a mongo shell to one of the Mongo instances
-  
-    Run rs.initiate() on just one and only one mongod instance for the replica set.
-    
+  Run rs.initiate() on just one and only one mongod instance for the replica set.
     rs.initiate( {
      _id : "rs0",
      members: [
@@ -73,62 +66,56 @@
      ]
     })
     rs.satus()
-
-  Set Up two Replica Sets (rs0 and rs1). 3 nodes for each Replica set. 
-  
-## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/4_mongodb_3nodes_replicaInit_status.gif)
-## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/11_mongodb_rs2_init_success_status.gif)
+  Set Up two Replica Sets (rs0 and rs1). Three nodes for each Replica set. 
+  Repica set #1 - rs0 
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/4_mongodb_3nodes_replicaInit_status.gif)
+  Repica set #2 - rs1 
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/11_mongodb_rs2_init_success_status.gif)
 
 ## 3.  Covert the Replica Sets into two Shards
-  1) start from secondary node:
-  #update to add "--shardsvr" option: mongod --replSet "rs0" --shardsvr --port 27017                        
-    sudo vi /lib/systemd/system/mongodb.service 
-        ExecStart=/usr/bin/mongod --shardsvr --port 27017 --replSet "rs0" --bind_ip localhost,10.0.2.192 --unixSocketPrefix=${SOCKETPATH} --config ${CONF} $DAEMON_OPTS
-                              
-    sudo systemctl daemon-reload
-    sudo systemctl restart mongodb
-    sudo systemctl status mongodb                         
-  2)update for primary node
+1) start from secondary node:
+#update to add "--shardsvr" option: mongod --replSet "rs0" --shardsvr --port 27017                        
     sudo vi /lib/systemd/system/mongodb.service 
         ExecStart=/usr/bin/mongod --shardsvr --port 27017 --replSet "rs0" --bind_ip localhost,10.0.2.192 --unixSocketPrefix=${SOCKETPATH} --config ${CONF} $DAEMON_OPTS
     sudo systemctl daemon-reload
     sudo systemctl restart mongodb
     sudo systemctl status mongodb                         
-
-## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/7_mongodb_shardsvr_secondary_setup.gif)
+2)update for primary node
+    sudo vi /lib/systemd/system/mongodb.service 
+        ExecStart=/usr/bin/mongod --shardsvr --port 27017 --replSet "rs0" --bind_ip localhost,10.0.2.192 --unixSocketPrefix=${SOCKETPATH} --config ${CONF} $DAEMON_OPTS
+    sudo systemctl daemon-reload
+    sudo systemctl restart mongodb
+    sudo systemctl status mongodb                         
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/7_mongodb_shardsvr_secondary_setup.gif)
 
 ## 4.  Setup  Config Server Replica Set. It will have 3 nodes.
-  Create another 3 EC2 as  Config Server             
+  Create another 3 EC2 instances as Mongo Config Server replica set.            
   The config servers use the default data directory /data/configdb and the default port 27019.
     sudo apt update
     sudo apt install mongodb
-    
-    #Modify the mongodb.servie to add "--configsvr --replSet configReplSet --port 27019 --bind_ip localhost,10.0.2.116"
-    (replace the 10.0.2.116 with the node private IP)
-    
+  #Modify the mongodb.servie to add "--configsvr --replSet configReplSet --port 27019 --bind_ip localhost,10.0.2.116"
+  (replace the 10.0.2.116 with the node private IP)
     sudo vi /lib/systemd/system/mongodb.service 
-				mongod  --configsvr --replSet configReplSet --port 27019 --bind_ip localhost,10.0.2.116 
-    
+        mongod  --configsvr --replSet configReplSet --port 27019 --bind_ip localhost,10.0.2.116 
     sudo systemctl daemon-reload
     sudo systemctl restart mongodb
     sudo systemctl status mongodb 
 
     #Initiate the configuration replication set
-			rs.initiate( {
-			   _id: "configReplSet",
-			   configsvr: true,
-			   members: [
-			      { _id: 0, host: "10.0.2.116:27019" },
-			      { _id: 1, host: "10.0.2.243:27019" },
-			      { _id: 2, host: "10.0.2.164:27019" }
-			   ]
-			} )
-
-## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/8_mongodb_configSrv_init.gif)
+    rs.initiate( {
+        _id: "configReplSet",
+        configsvr: true,
+        members: [
+            { _id: 0, host: "10.0.2.116:27019" },
+            { _id: 1, host: "10.0.2.243:27019" },
+            { _id: 2, host: "10.0.2.164:27019" }
+        ]
+        } )
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/8_mongodb_configSrv_init.gif)
 
 ## 5.  Setup a Mongo Query Router EC2 node as the console to access the DB
-  Mongos for ¡°MongoDB Shard,¡± is a routing service for MongoDB shard configurations that processes queries from the application layer,   
-   
+  Mongos for MongoDB Shard, is a routing service for MongoDB shard configurations.
+  It processes queries from the application layer,   
     sudo apt update
     sudo apt install mongodb
     sudo vi /lib/systemd/system/mongodb.service 
@@ -141,13 +128,17 @@
     
     sudo systemctl stop mongod
 
-## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/9_mongodb_queryRoute_works.gif)
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/9_mongodb_queryRoute_works.gif)
 
-## 6.  Open the required port in the EC2 security groups. If not, those nodes can't communicate to form a cluster.
-## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/5_mongodb_shardsvr_openPort_27018.gif)
+## 6.  Open the required port in the EC2 security groups.
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/5_mongodb_shardsvr_openPort_27018.gif)
 
-## 7.  Integrate the two Replica Sets and Config Server Replica Set and Mongo Query Router into one Shard Cluster.
-  Go to the Mongo Query Router instance, run Mongo.
+## 7.  Form a Mongo Cluster 
+  Integrate the two Replica Sets and Config Server Replica Set and Mongo Query Router into one Shard Cluster.
+  The cluster contains 2 shards - each shard is a replica set containing 3 nodes.
+  The cluster contains 1 config server replica set which has 3 nodes.
+  The cluster contains 1 Mongo Query Router. 
+    Go to the Mongo Query Router instance, run Mongo.
     
     #Add the first shard
     
@@ -181,16 +172,14 @@
             },
             "operationTime" : Timestamp(1542304817, 7)
     }
-    mongos>
-
-## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/12_mongodb_queryRouter_shardingStatus.gif)
+    mongos>sh.status()
+  Here is the cluster sharding status.
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/12_mongodb_queryRouter_shardingStatus.gif)
 
 ## 8.  Test the Shard Cluster with 1M data
   It works and show balance in two data Replica Sets (rs0 and rs1).
-  Before the 1M data, I try 10000 data. The shard doesn't look balance. See the screen capture #1-Result after loading 1K data:.
-  However, after Insert 1M data, the shard works as design.  See the screen capture #2-Result after loading 1M data.
 
-  1) Insert data for shard test
+  Insert data for shard test
   
     db.createCollection("shardTest")
     var bulk = db.shardTest.initializeUnorderedBulkOp();
@@ -207,22 +196,24 @@
        bulk.insert( { "user_id":user_id, "name":name, "number":number });
     }
     bulk.execute();
+  
+  Before the 1M data, I try 10000 data. The shard doesn't look balance. 
+  Result after loading 1K data:
+  ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/15_mongodb_shard_sharded_status_db1.gif)
 
-#1-Result after loading 1K data:
-## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/15_mongodb_shard_sharded_status_db1.gif)
-
-#2-Result after loading 1M data:
-## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/16_mongodb_shard_sharded1Mdata_dbstatus_rs0_rs1_balance.gif)
+  However, after Insert 1M data, the shard works as design.  See the screen capture #2-Result after loading 1M data.
+  Result after loading 1M data:
+  ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/16_mongodb_shard_sharded1Mdata_dbstatus_rs0_rs1_balance.gif)
   
 ## 9.  Test the network partitions
    
-   Test Case #1: Test the data query without network partition happen - Insert data at Master Node
+### Test Case #1: Test the data query without network partition happen - Insert data at Master Node
    
-     Use the shard rs0 to test the network partition. 
-     Open 3 bash terminal, each console is connecting to 1 of the 3 nodes on the shard rs0 replica set. 
-     Insert data on one node, query the data on all three nodes. 
+  Use the shard rs0 to test the network partition. 
+  Open 3 bash terminal, each console is connecting to 1 of the 3 nodes on the shard rs0 replica set. 
+  Insert data on one node, query the data on all three nodes. 
      
-     Result: When the network is normal, all nodes return the query result appropriatly. 
+  Result: When the network is normal, all nodes return the query result appropriatly. 
 
      1) Insert a record to the node #1 (Master / Primary). 
         use cmpe281B
@@ -252,7 +243,7 @@
         db.bios.find( { "name.first": "Tim" } )
         db.stats()  
 
-## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/good-network-insert-at-master-work.png)
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/good-network-insert-at-master-work.png)
 
 
    Test Case #2: Test the data query without network partition happen - Insert data at Slave Node
