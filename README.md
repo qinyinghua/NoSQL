@@ -22,7 +22,7 @@
           -- not be able to keep "consistency" / "linearizability" 
           -- different nodes can disagree about the order in which operations took place.
           -- be able to keep all nodes "availability" - can handle requests on all nodes.  
-
+      
 ## Mongo Cluster with Sharding Network Partition Experiements and Results
 
   Deployment architecture of MongoDB as CP. 
@@ -31,7 +31,7 @@
   
   ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/docImages/MongoDeploy.png)
 
-## 1. Create 3 Mongo EC2 instances following following steps.
+## 1. Create Mongo EC2 instances
 
   Image: Ubuntu Server 18.04 LTS (HVM), SSD Volume Type - ami-0bbe6b35405ecebdb
   
@@ -87,7 +87,7 @@
 
 ## 3.  Covert the Replica Sets into two Shards
 
-1) Update the slave nodes
+  Step 1: Update the slave nodes
 
   update to add "--shardsvr" option: mongod --replSet "rs0" --shardsvr --port 27017  
                       
@@ -97,7 +97,7 @@
     sudo systemctl restart mongodb
     sudo systemctl status mongodb  
                            
-2) Udate the master node
+  Step 2:Udate the master node
 
     sudo vi /lib/systemd/system/mongodb.service
     
@@ -256,7 +256,7 @@
    
   Use the shard rs0 to test the network partition. 
   
-  Open 3 bash terminal, each console is connecting to 1 of the 3 nodes on the shard rs0 replica set. 
+  Open 3 bash terminals, each console is connecting to 1 of the 3 nodes on the shard rs0 replica set. 
   
   Insert data on one node, query the data on all three nodes. 
      
@@ -434,7 +434,7 @@ The stale data at old master can still be accessed if direct access the old mast
      
   The Mongo DB has make the data eventually consistent after a network partition recovery.    
 
-## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/bad-network-recovered-data-consistent.png)
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/bad-network-recovered-data-consistent.png)
  
 ## Cassandra Cluster Experiements and Results
 
@@ -451,7 +451,6 @@ The stale data at old master can still be accessed if direct access the old mast
 		What happens to the system during partition recovery?
 	Results
 		Run the Experiments and Record results.
-
 
 ## Network Partitions
 
@@ -474,4 +473,3 @@ The stale data at old master can still be accessed if direct access the old mast
   Recover the network partition - use below command line to recover the iptable.
 
       sudo  iptables-restore < $HOME/firewall.txt
-      
