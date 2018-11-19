@@ -26,20 +26,21 @@
 ## Mongo Cluster with Sharding Network Partition Experiements and Results
 
 I refer to the official document to install the MongoDB 3.6 shard clustering, [https://docs.mongodb.com/v3.6/tutorial/convert-replica-set-to-replicated-shard-cluster/](https://docs.mongodb.com/v3.6/tutorial/convert-replica-set-to-replicated-shard-cluster/).
+
 Here is the architecture of the clustering and the relative running 10 EC2 nodes.
-## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/mongodb-cluster-diagram.png)
- 
-## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/00_10_nodes_in_mongoCluster.gif)
 
-  Deployment architecture - MongoDB Cluster. 
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/docImages/MongoDeploy.png)
 
-  The cluster contains 2 shards - each shard is a replica set containing 3 nodes - installed as EC2 instances.
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/mongodb-cluster-diagram.png)
 
-  The cluster contains 1 config server replica set which has 3 nodes - installed as EC2 instances.
+The cluster contains 2 shards - each shard is a replica set containing 3 nodes - installed as EC2 instances.
 
-  The cluster contains 1 Mongo Query Router - installed as EC2 instance. 
+The cluster contains 1 config server replica set which has 3 nodes - installed as EC2 instances.
+
+The cluster contains 1 Mongo Query Router - installed as EC2 instance. 
+
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/00_10_nodes_in_mongoCluster.gif)
   
-  ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/docImages/MongoDeploy.png)
 
 ## 1. Create Mongo EC2 instances
 
@@ -494,13 +495,13 @@ Check status.
 
 ## Cassandra Cluster Experiements and Results
 
-### 1. Setup EC2 Cassandra cluster
+Select CP NoSQL Databsase Cassandra cluster as AWS EC2 Instnaces. 
 
 Deployment archiecture diagram
 
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installCassandra/Cassandra-Ring.jpg)
 
-Select CP NoSQL Databsase Cassandra cluster as AWS EC2 Instnaces. 
+### 1. Setup EC2 Cassandra cluster
 
 Following below article to setup EC2 Cassandra cluster (4 EC2 instances used in the cluster): https://linode.com/docs/databases/cassandra/set-up-a-cassandra-node-cluster-on-ubuntu-and-centos/
 
@@ -547,12 +548,14 @@ Here is the final working clustering 4 Cassandra nodes.
 Make sure to note your approach to creating a "network partition" for experiments.
 
 Experiments / Test Cases for Mongo
-		How does the system function during normal mode (i.e. no partition)
-		What happens to the nodes during a partition? 
-		Can stale data be read from a node during a partition?
-		What happens to the system during partition recovery?
+
+- How does the system function during normal mode (i.e. no partition)
+- What happens to the nodes during a partition? 
+- Can stale data be read from a node during a partition?
+- What happens to the system during partition recovery?
+
 Results
-		Run the Experiments and Record results.
+- Run the Experiments and Record results.
 
 ## Network Partitions
 
