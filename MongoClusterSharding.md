@@ -1,7 +1,7 @@
 # CMPE281 - Personal NoSql Project - Mongo Cluster Sharding
 
-  Back to the project main report: 
-  https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/README.md
+Back to the project main report: 
+https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/README.md
 
   Mongo Cluster with Sharding Setup
   
@@ -196,20 +196,6 @@
   
 ## 9.  Test the network partitions
    
-   Test Case #1: Test the data query without network partition happen. 
-   
-     Use the shard rs0 to test the network partition. 
-     Open 3 bash terminal, each console is connecting to 1 of the 3 nodes on the shard rs0 replica set. 
-     Insert data on one node, query the data on all three nodes. 
-     When the network is normal, it should all return the query result appropriatly. 
-
-   Test Case #2: Test the data query when network partition happens at the master node. 
-   
-     Use the shard rs0 to test the network partition. 
-     Open 3 bash terminal, each console is connecting to 1 of the 3 nodes on the shard rs0 replica set. 
-     Insert data on one node, query the data on all three nodes. 
-     When the network is normal, it should all return the query result appropriatly. 
-   
    Test Case #1: Test the data query without network partition happen - Insert data at Master Node
    
      Use the shard rs0 to test the network partition. 
@@ -245,6 +231,9 @@
         use cmpe281B
         db.bios.find( { "name.first": "Tim" } )
         db.stats()  
+
+## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/good-network-insert-at-master-work.png)
+
 
    Test Case #2: Test the data query without network partition happen - Insert data at Slave Node
    
@@ -282,6 +271,8 @@
         db.bios.find( { "name.first": "Tim2" } )
         db.stats()  
    
+## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/good-network-insert-at-slave-not-work.png)
+
    Test Case #3: Test the data query with network partition happen - Insert data at Master Node
    
      Use the shard rs0 to test the network partition. 
@@ -293,11 +284,6 @@
      
      Insert data on one node, query the data on all three nodes. 
      
-     Result: 
-      - When the network partition happen, one of the slave nodes will be elected as master. 
-      - After updated the data on the new master, the new master and the slave data are consisitant
-      - The stale data at old master can still be access if direct access the old master      
-
      1) Insert a record to the node #1 (Master / Primary). 
         use cmpe281B
         // insert bio - Tim3 Foo
@@ -340,7 +326,15 @@
          use cmpe281B
          db.bios.find( { "name.first": "Tim" } )  
          db.bios.find( { "name.first": "Tim_Updated" } )
-         
+
+     Result: 
+      - When the network partition happen, one of the slave nodes will be elected as master. 
+      - After updated the data on the new master, the new master and the slave data are consisitant
+      - The stale data at old master can still be access if direct access the old master      
+
+## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/bad-network-form.png)
+## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/bad-network-rs-status-at-new-master.png)
+## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/bad-network-rs-status-at-old-master.png)
          
    Test Case #4: Test the data query after fixed/recovered network partition 
    
@@ -356,5 +350,9 @@
      Result: 
       - When the network partition recovered, the old master has been elected as the new master again. 
       - Check the data on all three nodes, the data are consistent after network partition recovery. 
-      - All nodes are with updated data.    
+      - All nodes are with updated data. 
+     
+     The Mongo DB has make the data eventually consistent after a network partition recovery.    
+
+## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/bad-network-recovered-data-consistent.png)
  
