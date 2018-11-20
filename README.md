@@ -2,26 +2,78 @@
 
 ## Objective
 
-  In this project, I will be testing the Partition Tolerance of MongoDB and Cassandra NoSQL Database. 
+In this project, I will be testing the Partition Tolerance of MongoDB and Cassandra NoSQL Database. 
   
-  MongoDB is a CP NoSQL Databases while Cassandra is a AP NoSQL Database.
+MongoDB is a CP NoSQL Databases while Cassandra is a AP NoSQL Database.
   
-  Partition tolerance in CAP means the ability of NoSQL Database system to continue processing data - 
-  even if a network partition causes communication errors between subsystems. 
+Partition tolerance in CAP means the ability of NoSQL Database system to continue processing data - 
+even if a network partition causes communication errors between subsystems. 
+
+https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/CassandraCluster.md
+https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/MongoClusterSharding.md
   
-  Based on the reference artical, we made following hypothesis. The experiments would be built based on this.
+Based on the reference artical, we made following hypothesis. The experiments would be built based on this.
   
-      1) When network is healthy, the CP and AP NoSQL Database both would be consistent and available.
-      
-      2) When "network partition" occurs, messages are dropped, CP NoSQL Database would
-          -- be able to keep "consistency" / "linearizability" 
-          -- not be able to keep all nodes "availability" 
-          -- would reject some requests on some nodes.  
-      
-      3) When "network partition" occurs, messages are dropped, AP NoSQL Database would
-          -- not be able to keep "consistency" / "linearizability" 
-          -- different nodes can disagree about the order in which operations took place.
-          -- be able to keep all nodes "availability" - can handle requests on all nodes.  
+    1) When network is healthy, the CP and AP NoSQL Database both would be consistent and available.
+    
+    2) When "network partition" occurs, messages are dropped, CP NoSQL Database would
+        -- be able to keep "consistency" / "linearizability" 
+        -- not be able to keep all nodes "availability" 
+        -- would reject some requests on some nodes.  
+    
+    3) When "network partition" occurs, messages are dropped, AP NoSQL Database would
+        -- not be able to keep "consistency" / "linearizability" 
+        -- different nodes can disagree about the order in which operations took place.
+        -- be able to keep all nodes "availability" - can handle requests on all nodes.  
+
+## Testing Result: 
+
+### MongoDB
+
+What happens on a Partition?
+
+- Primary node goes down: system becomes unavailable while a new primary is selected.
+- Primary node is disconnected from too many Secondary nodes: system becomes unavailable. 
+- Other secondaries elect a new Primary while the primary steps down
+
+MongoDB provides strong consistency because it is a single-master system and all writes go to primary by default.
+
+- Automatic failover in case of partitioning
+- If a partition occurs the system will stop accepting writes until it believes that it can safely complete them
+
+So, it can continue to work in case of network partitioning and it gives up availability. It¡¯s a CP system!
+
+If a partition occurs, that is, a hardware or network failure, there are two worst-case scenarios for the primary node: 
+- the primary node fails, and an election has to occur
+- or the secondary nodes can not connect to the primary. 
+
+In both cases availability is sacrificed. I
+
+- In the former, the system is unavailable to handle requests during the duration of the node failure and new master election. 
+- In the latter, the data itself is unavailable. 
+
+Thus, availability is sacrificed in light of CAP in spite of the availability the replica sets provide.
+
+Hence, MongoDB is referred to as a consistent and partition (CP) tolerant storage system.
+
+### Cassandra
+
+Cassandra's default conguration classifies it as AP, available and partition. 
+According to the CAP theorem, consistency is then sacrificed for 
+guaranteed high availability (partition tolerance is a non-selectable option
+for distributed databases). As seen in the previous section, the distributed,
+peer-to-peer structure ensures that any node can handle requests and no data
+loss will occur if a node goes down, hence providing availability at all times.
+
+However, this does not mean that there is no consistency at all. Cassandra
+has a special feature regarding consistency, that is, Cassandra has tuneable
+consistency. Replication factor and consistency level can be set in such
+a way that the user can choose between strong consistency and eventual con-
+sistency.
+
+Cassandra uses master-master replication scheme, which means that in case of network partition, all nodes will continue working.
+It means that we have an AP system.
+
       
 ## Mongo Cluster with Sharding Network Partition Experiements and Results
 
@@ -32,6 +84,8 @@ Here is the architecture of the clustering and the relative running 10 EC2 nodes
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/docImages/MongoDeploy.png)
 
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/mongodb-cluster-diagram.png)
+
+[[Source: https://docs.mongodb.com/v3.6/core/sharded-cluster-components/]]
 
 The cluster contains 2 shards - each shard is a replica set containing 3 nodes - installed as EC2 instances.
 
@@ -257,6 +311,8 @@ When query those example data, the first name and last name are two keys having 
 This is a hash based partitioning. Data is partitioned into chunks using a hash function. 
 
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/shardingBonus/hashKey.png)
+
+[[Source: https://docs.mongodb.com/v3.6/core/sharding-shard-key/]]
 
 Go to Mongo Query Router, run:
 
