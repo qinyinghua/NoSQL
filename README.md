@@ -33,9 +33,11 @@ I refer to the official document to install the MongoDB 3.6 shard clustering, [h
 Here is the architecture of the clustering and the relative running 10 EC2 nodes.
 
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/docImages/MongoDeploy.png)
+
 [[Source: Yinghua Qin Invidiaul Project at CMPE 281]]
 
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/mongodb-cluster-diagram.png)
+
 [[Source: https://docs.mongodb.com/v3.6/core/sharded-cluster-components/]]
 
 The cluster contains 2 shards - each shard is a replica set containing 3 nodes - installed as EC2 instances.
