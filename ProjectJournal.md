@@ -78,4 +78,49 @@ Before the 1M data, I try 10000 data. The shard doesn't look balance.
 However, after Insert 1M data, the shard works as design.
 ## ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/15_mongodb_shard_sharded_status_db1.gif)
 
+## Update on Week of 11/18/2018
+Added more test cases to test the MongoDB with / without network partition. 
 
+- How does the system function during normal mode (i.e. no partition)
+
+    Test Case #1: Test the data insert without network partition happen 
+    - Insert data success
+    Test Case #2: Test the data query without network partition happen 
+    - Query data success
+    
+- What happens to the master node during a partition? 
+
+    Test Case #3: Test the data query during network partition happen - Insert data from Mongos Query Router 
+    - Insert data failed as master node is not available
+    
+- Can stale data be read from a slave node during a partition?
+
+    Test Case #4: Test the data query during network partition - Query data from Mongos Query Router
+    - Query data - no stale data could be read from a slave node  
+    
+- What happens to the system during partition recovery?
+
+    Test Case #4: Test the data insert and query during network partition recovery - Query data from Mongos Query Router  
+
+## Update on Day of 11/21/2018 (I am glad that no class today so that I could spend more time on working on the lab :) )
+
+I spent much time on testing and re-testing the MongoDB and Cassandra network partition cases. I found some interesting issues on MongoDB. 
+One of them is about the "Replica Failover Rollback". 
+
+In my test case #4 of MongoDb:
+  - The result is interesting. The "Test 4" data is missing!!! In another word, the data has been rolled back to the previous version.
+  - When the network partition recovered, the old master has been elected as the new master again.
+  - Check the data I inserted during the network partition, the data has been rolled back to the previous version. 
+  - All nodes are with consistent data. 
+ 
+See the offical document of MongoDB about the rollback during replica set failover
+      
+      A rollback reverts write operations on a former primary when the member rejoins its replica set after a failover. A rollback is necessary only if the primary had accepted write operations that the secondaries had not successfully replicated before the primary stepped down. When the primary rejoins the set as a secondary, it reverts, or ¡°rolls back,¡± its write operations to maintain database consistency with the other members.
+      MongoDB attempts to avoid rollbacks, which should be rare. When a rollback does occur, it is often the result of a network partition. Secondaries that can not keep up with the throughput of operations on the former primary, increase the size and impact of the rollback.
+      A rollback does not occur if the write operations replicate to another member of the replica set before the primary steps down and if that member remains available and accessible to a majority of the replica set.
+
+[Source: https://docs.mongodb.com/manual/core/replica-set-rollbacks/]
+      
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/round2/RollbackAfterPartitionRecovery.png)
+
+ 
