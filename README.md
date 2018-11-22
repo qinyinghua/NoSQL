@@ -36,10 +36,6 @@ Here is the architecture of the clustering and the relative running 10 EC2 nodes
 
 [[Source: Yinghua Qin Invidiaul Project at CMPE 281]]
 
-![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/mongodb-cluster-diagram.png)
-
-[[Source: https://docs.mongodb.com/v3.6/core/sharded-cluster-components/]]
-
 The cluster contains 2 shards - each shard is a replica set containing 3 nodes - installed as EC2 instances.
 
 The cluster contains 1 config server replica set which has 3 nodes - installed as EC2 instances.
@@ -445,6 +441,9 @@ Result: By design, MongoDB is a single-master system and all writes go to primar
 
       sudo iptables-save > $HOME/firewall.txt
       sudo iptables -A INPUT -s 10.0.2.0/24 -j DROP
+
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/partition-points.png)
+
   
   Insert data from Mongos Query Router, query the data from Mongos Query Router and all three nodes. 
      
@@ -725,7 +724,7 @@ We need to
 
 1 - Update the cassandra.yaml for each node
     sudo systemctl stop cassandra.service
-          sudo vi /usr/local/cassandra/conf/cassandra.yaml
+    sudo vi /usr/local/cassandra/conf/cassandra.yaml
     				cluster_name: 'casCluster'
     				authenticator: PasswordAuthenticator (optional)
     				seeds: ¡°node_private_ip_address¡±                      10.0.2.163,10.0.2.44,10.0.2.47,10.0.2.217
@@ -806,7 +805,8 @@ Run the CQL script to insert data at Cassandra node #1:
 
 https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/scripts/bios-data-cassandra.SQL
 
-When there is no network partition, the data insert from 1 node is consistantly rechived from all the 4 nodes in the Cassandra cluster.
+Result: 
+- When there is no network partition, the data insert from 1 node is consistantly rechived from all the 4 nodes in the Cassandra cluster.
 
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/testCassandra/no-partition-all-good.png)
 
@@ -819,8 +819,19 @@ When there is no network partition, the data insert from 1 node is consistantly 
 
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/testCassandra/partition-points.png)
 
+  Check the node ring status
+   
+    bin/nodetool status
+    bin/nodetool -h 127.0.0.1 getendpoints cmpe281 person 1
+    bin/nodetool -h 127.0.0.1 getendpoints cmpe281 person 2
+    ... ... 
+    bin/nodetool -h 127.0.0.1 getendpoints cmpe281 person 7
+
+Find out an sample data at the node 1 which can't be connected to due to network partition.
+
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/testCassandra/data-at-node1.png)
   
-  Update the data on node #2. 
+  Try to update this data on node #2. 
   
     sudo systemctl start cassandra.service
     
@@ -828,31 +839,21 @@ When there is no network partition, the data insert from 1 node is consistantly 
     
     ./cqlsh -u cassandra -p cassandra
     
-    //Create keyspace cmpe281
-    
-    DESCRIBE keyspaces;
-
-    CREATE KEYSPACE cmpe281
-      WITH REPLICATION = { 
-       'class' : 'SimpleStrategy', 
-       'replication_factor' : 1 
-      };
-  
     Use cmpe281;
-  
 
+    UPDATE person 
+    SET first_name = 'Person7'
+    WHERE person_id = 7;
 
-update person ( person_id, first_name, last_name, birth_date, death_date )
-values(1, 'John', 'Backus', '1924-12-03', '2007-03-17');
+    select * from person where person_id =7;
 
-      UPDATE cycling.cyclist_name
-      SET comments ='='Rides hard, gets along with others, a real winner'
-      WHERE id = fb372533-eb95-4bb4-8685-6ef61e994caa IF EXISTS;
+Result: 
+- When there is network partition, ??????????????
+
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/testCassandra/partion_7.png)
+
 
 #### Test Case #3: Test the data insert / query after fixed/recovered network partition 
-
-
-
 
 
 ## Part III - WOW Factors - Script to Generate 1M Data and Test Sharding Balance
