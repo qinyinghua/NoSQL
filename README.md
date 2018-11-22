@@ -812,6 +812,42 @@ When there is no network partition, the data insert from 1 node is consistantly 
 
 #### Test Case #2: Test the data insert / query with network partition happen 
 
+  Go to the Cassandra node #1. 
+  Create a network partition at node #1 - Using below command line to have iptable drop all incoming message. 
+      sudo iptables-save > $HOME/firewall.txt
+      sudo iptables -A INPUT -s 10.0.2.0/24 -j DROP  
+
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/testCassandra/partition-points.png)
+
+  
+  Update the data on node #2. 
+  
+    sudo systemctl start cassandra.service
+    
+    cd /usr/local/cassandra/bin 
+    
+    ./cqlsh -u cassandra -p cassandra
+    
+    //Create keyspace cmpe281
+    
+    DESCRIBE keyspaces;
+
+    CREATE KEYSPACE cmpe281
+      WITH REPLICATION = { 
+       'class' : 'SimpleStrategy', 
+       'replication_factor' : 1 
+      };
+  
+    Use cmpe281;
+  
+
+
+update person ( person_id, first_name, last_name, birth_date, death_date )
+values(1, 'John', 'Backus', '1924-12-03', '2007-03-17');
+
+      UPDATE cycling.cyclist_name
+      SET comments ='='Rides hard, gets along with others, a real winner'
+      WHERE id = fb372533-eb95-4bb4-8685-6ef61e994caa IF EXISTS;
 
 #### Test Case #3: Test the data insert / query after fixed/recovered network partition 
 
