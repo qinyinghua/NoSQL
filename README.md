@@ -810,6 +810,8 @@ Result:
 
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/testCassandra/no-partition-all-good.png)
 
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/testCassandra/descNamespaceCMPE281.png)
+
 #### Test Case #2: Test the data insert / query with network partition happen 
 
   Go to the Cassandra node #1. 
@@ -831,29 +833,79 @@ Find out an sample data at the node 1 which can't be connected to due to network
 
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/testCassandra/data-at-node1.png)
   
-  Try to update this data on node #2. 
+  Go to the jumbox node.  Open 4 ssh consoles, each of them connects to a node in Cassandra cluster service remotely through /cqlsh command.  
   
     sudo systemctl start cassandra.service
     
     cd /usr/local/cassandra/bin 
     
-    ./cqlsh -u cassandra -p cassandra
+    # Connect to a node in Cassandra cluster service remotely through /cqlsh command. 
     
+    ./cqlsh 10.0.2.163 -u cassandra -p cassandra
+    ./cqlsh 10.0.2.44 -u cassandra -p cassandra
+    ./cqlsh 10.0.2.47 -u cassandra -p cassandra
+    ./cqlsh 10.0.2.217 -u cassandra -p cassandra
+    
+  On one console, update the data.    
+
     Use cmpe281;
 
     UPDATE person 
-    SET first_name = 'Person7'
+    SET first_name = 'Person1_Updated'
+    WHERE person_id = 1;
+
+    UPDATE person 
+    SET first_name = 'Person7_Updated'
     WHERE person_id = 7;
 
+  On all consoles, query the data.    
+
+    select * from person where person_id =1;
+    select * from person where person_id =2;
     select * from person where person_id =7;
-
+    
 Result: 
-- When there is network partition, ??????????????
+- When there is network partition, the remaining nodes are still available for insert and update. 
+- However, the responses from different nodes are not consistent.  See the screen capture below. 
 
-![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/testCassandra/partion_7.png)
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/testCassandra/partion-1.png)
 
 
 #### Test Case #3: Test the data insert / query after fixed/recovered network partition 
+
+  Go to the Cassandra node #1. 
+  Recover network partition at node #1 - Using below command line to recovery the iptable. 
+      sudo  iptables-restore < $HOME/firewall.txt
+
+  Check the node ring status
+   
+    bin/nodetool status
+  
+  Go to the jumbox node.  Open 4 ssh consoles, each of them connects to a node in Cassandra cluster service remotely through /cqlsh command.  
+  
+    sudo systemctl start cassandra.service
+    
+    cd /usr/local/cassandra/bin 
+    
+    # Connect to a node in Cassandra cluster service remotely through /cqlsh command. 
+    
+    ./cqlsh 10.0.2.163 -u cassandra -p cassandra
+    ./cqlsh 10.0.2.44 -u cassandra -p cassandra
+    ./cqlsh 10.0.2.47 -u cassandra -p cassandra
+    ./cqlsh 10.0.2.217 -u cassandra -p cassandra
+    
+  On all consoles, query the data to see if that is consistent.    
+
+    use cmpe281;
+    
+    select * from person where person_id =1;
+    select * from person where person_id =2;
+    select * from person where person_id =7;
+    
+Result: 
+- When the network partition recovered, the data from all four nodes become consistent eventually. 
+
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/testCassandra/partition-recovery.png)
 
 
 ## Part III - WOW Factors - Script to Generate 1M Data and Test Sharding Balance
