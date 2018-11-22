@@ -8,9 +8,6 @@ MongoDB is a CP NoSQL Databases while Cassandra is a AP NoSQL Database.
   
 Partition tolerance in CAP means the ability of NoSQL Database system to continue processing data - 
 even if a network partition causes communication errors between subsystems. 
-
-https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/CassandraCluster.md
-https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/MongoClusterSharding.md
   
 Based on the reference artical, we made following hypothesis. The experiments would be built based on this.
   

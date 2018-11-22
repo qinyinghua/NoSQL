@@ -4,13 +4,24 @@ Back to the project main report:
 
 https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/README.md
 
-## Mongo Cluster with Sharding Network Partition Experiements and Results
+## Part I - Mongo Cluster with Sharding Network Partition Experiements and Results
 
-  Deployment architecture of MongoDB as CP. 
+I refer to the official document to install the MongoDB 3.6 shard clustering, [https://docs.mongodb.com/v3.6/tutorial/convert-replica-set-to-replicated-shard-cluster/](https://docs.mongodb.com/v3.6/tutorial/convert-replica-set-to-replicated-shard-cluster/).
+
+Here is the architecture of the clustering and the relative running 10 EC2 nodes.
+
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/docImages/MongoDeploy.png)
+
+[[Source: Yinghua Qin Invidiaul Project at CMPE 281]]
+
+The cluster contains 2 shards - each shard is a replica set containing 3 nodes - installed as EC2 instances.
+
+The cluster contains 1 config server replica set which has 3 nodes - installed as EC2 instances.
+
+The cluster contains 1 Mongo Query Router - installed as EC2 instance. 
+
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/00_10_nodes_in_mongoCluster.gif)
   
-  Each shard-x will have 3 nodes to form a replica set. 
-  
-  ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/docImages/MongoDeploy.png)
 
 ## 1. Create Mongo EC2 instances
 
@@ -197,51 +208,125 @@ https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/README.md
   
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/12_mongodb_queryRouter_shardingStatus.gif)
 
-## 8.  Test the Shard Cluster with 1M data
+## 8.  Create Data Collection in MongoDB Cluster with Sharding 
 
-  It works and shows balance in two data Replica Sets (rs0 and rs1).
+Create the bios data collection. 
 
-  Insert data for shard test.
+Go to Mongo Query Router, run:
   
-    db.createCollection("shardTest")
-    var bulk = db.shardTest.initializeUnorderedBulkOp();
-    var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
-    var rnum1 ="";
-    var rnum2 ="";
-    people = ["Marc", "Bill", "George", "Eliot", "Matt", "Trey", "Tracy", "Greg", "Steve", "Kristina", "Katie", "Jeff"];
-    for(var i=0; i<1000000; i++){
-       user_id = i;
-       rnum1 = Math.floor(Math.random() * chars.length);
-       rnum2 = Math.floor(Math.random() * chars.length);
-       name = "_"+people[Math.floor(Math.random()*people.length)]+"_"+rnum1+rnum2;
-       number = Math.floor(Math.random()*10001);
-       bulk.insert( { "user_id":user_id, "name":name, "number":number });
-    }
-    bulk.execute();
+    mongo localhost:27017/admin 
+    use cmpe281B
+    db.createCollection("bios")
   
-  Before inserting the 1M data, I try 10000 data. The shard doesn't look balance. 
+    >> Insert data
   
-  Result after loading 1K data:
+    mongo localhost:27017/cmpe281B ~/bios.js
   
-  ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/15_mongodb_shard_sharded_status_db1.gif)
+    db.bios.find( { "name.first": "John" } )
+  
+I choose the last name as the shading key. Here is the consideration: 
 
-  However, after Insert 1M data, the shard works as design.  
-  
-  Result after loading 1M data:
-  
-  ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/16_mongodb_shard_sharded1Mdata_dbstatus_rs0_rs1_balance.gif)
-  
-## 9.  Test Mongo Cluster without Network Partition
+- Must have values for each record
+- Have values that are evenly distributed among all documents
+- Group documents that are often accessed at the same time into contiguous chunks
+- Effective distribution of activity among shards
+
+When query those example data, the first name and last name are two keys having values for each record. 
+
+"Last Name" would be the good one which have values that are evenly distributed among all documents. 
+
+This is a hash based partitioning. Data is partitioned into chunks using a hash function. 
+
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/shardingBonus/hashKey.png)
+
+[[Source: https://docs.mongodb.com/v3.6/core/sharding-shard-key/]]
+
+Go to Mongo Query Router, run:
+
+    sh.enableSharding( "cmpe281B" )
+    db.bios.ensureIndex({"name.last": "hashed"})
+    sh.shardCollection("cmpe281B.bios", { "name.last": "hashed"} )
+    db.stats()  
+
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/shardingBonus/bios2_Hashindex_lastName_work.gif)
+
+ 
+## 9.  Test Mongo Cluster with / without Network Partition
+
+- How does the system function during normal mode (i.e. no partition)
+
+    Test Case #1: Test the data insert and query without network partition happen 
+    Test Case #2: Test the Mongo chararistic without network partition happen - Insert data at Master Node
+    Test Case #3: Test the Mongo chararistic without network partition happen - Insert data at Slave Node 
+    
+- What happens to the master node during a partition? 
+
+    Test Case #4: Test Mongo with network partition happen - drop all incoming message on master node
+    - Create a network partition, drop all the incoming message on the master node
+    - The master node still up and running but the slave nodes can not connect to master node
+    - A new master is elected!!
+
+- Can stale data be read from a slave node during a partition?
+
+    Test Case #5: Test the data query during network partition - Query data from a slave node
+    - Query data - no stale data could be read from a slave node  
+    
+- What happens to the system during partition recovery?
+
+    Test Case #6: Test the data insert and query during network partition recovery 
+    - Update and Query data from Mongos Query Router (at this time, there are 2 nodes in the shard)
+    - Reovery the network partition
+    - The new master is elected back to the old master
+    - Query the data to see if the data is the updated version or the stale data  
    
-### Test Case #1: Test the data query without network partition happen - Insert data at Master Node
+### Test Case #1: Test the data query without network partition happen - Insert / Query data from Mongos Query Router
    
-  Use the shard rs0 to test the network partition. 
+  Use the shard rs0. 
+  
+  Open a bash terminal, it connects to the Mongos Query Router.
+  From there, using the Mongos Query Router as jump box, open bash window for 3 nodes on the shard rs0 replica set. 
+  
+  Insert data from Mongos Query Router, query the data from Mongos Query Router and all three nodes. 
+     
+     1) Insert a record . 
+        use cmpe281B
+        // insert bio - Bob Foo
+        db.bios.insert(
+        {
+        "name" : {
+            "first" : "Bob",
+            "last" : "Foo"
+        },
+        "birth" : ISODate("1985-05-19T04:00:00Z"),
+        "contribs" : [
+            "C"
+        ],
+        "awards" : [
+            {
+                "award" : "The Economist Innovation Award",
+                "year" : 2003,
+                "by" : "The Economist"
+            }
+        ]})   
+
+     2) Query the record at, Mongo Query Router, node #1, node #2 and node #3. 
+   
+        rs.slaveOk()
+        use cmpe281B
+        db.bios.find( { "name.first": "Bob" } )
+        db.stats()  
+
+Result: When the network is normal, data insert and data query work well. 
+
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/round2/no-partition.png)
+
+### Test Case #2: Test the Mongo chararistic without network partition happen - Insert data at Master Node
+   
+  Use the shard rs0. 
   
   Open 3 bash terminals, each console is connecting to 1 of the 3 nodes on the shard rs0 replica set. 
   
   Insert data on one node, query the data on all three nodes. 
-     
-  Result: When the network is normal, all nodes return the query result appropriatly. 
 
      1) Insert a record to the node #1 (Master / Primary). 
         use cmpe281B
@@ -271,18 +356,19 @@ https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/README.md
         db.bios.find( { "name.first": "Tim" } )
         db.stats()  
 
+Result: By design, MongoDB is a single-master system and all writes go to primary by default. 
+SSH to the Master node to do insert, it works. 
+
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/good-network-insert-at-master-work.png)
 
 
-### Test Case #2: Test the data query without network partition happen - Insert data at Slave Node
+### Test Case #3: Test the Mongo chararistic without network partition happen - Insert data at Slave Node
    
-  Use the shard rs0 to test the network partition. 
+  Use the shard rs0 to test. 
   
   Open 3 bash terminals, each console is connecting to 1 of the 3 nodes on the shard rs0 replica set. 
   
   Insert data on one node, query the data on all three nodes. 
-  
-  Result: It is not allowed to insert into slave nodes. 
   
   Step 1: Insert a record to the node #2 (secondary/slave). 
             
@@ -316,18 +402,76 @@ https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/README.md
       
       db.bios.find( { "name.first": "Tim2" } )
    
- ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/good-network-insert-at-slave-not-work.png)
+Result: By design, MongoDB is a single-master system and all writes go to primary by default. If SSH to the slave node to do insert, it won't work. 
 
-## 10.  Test Mongo Cluster with Network Partition Happening
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/good-network-insert-at-slave-not-work.png)
 
-### Test Case #3: Test the data query with network partition happen - Insert data at Master Node
+### Test Case #4: Test Mongo with network partition happen - drop all incoming message on master node - Insert / Query from Mongo Query Router
+    - Create a network partition, drop all the incoming message on the master node
+    - The master node still up and running but the slave nodes can not connect to master node
+
+  Use the shard rs0. 
+  
+  Open a bash terminal, it connects to the Mongos Query Router.
+  From there, using the Mongos Query Router as jump box, open bash window for 3 nodes on the shard rs0 replica set. 
+
+  Create a network partition - Using below command line to have iptable drop all incoming message at master node
+
+      sudo iptables-save > $HOME/firewall.txt
+      sudo iptables -A INPUT -s 10.0.2.0/24 -j DROP
+
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/partition-points.png)
+
+  
+  Insert data from Mongos Query Router, query the data from Mongos Query Router and all three nodes. 
+     
+     1) Insert a record . 
+        use cmpe281B
+        // insert bio - Test4 Foo
+        db.bios.insert(
+        {
+        "name" : {
+            "first" : "Test4",
+            "last" : "Foo"
+        },
+        "birth" : ISODate("1985-05-19T04:00:00Z"),
+        "contribs" : [
+            "C"
+        ],
+        "awards" : [
+            {
+                "award" : "The Economist Innovation Award",
+                "year" : 2003,
+                "by" : "The Economist"
+            }
+        ]})   
+
+     2) Query the record at, Mongo Query Router, node #1, node #2 and node #3. 
    
+        rs.slaveOk()
+        use cmpe281B
+        db.bios.find( { "name.first": "Test4" } )
+        db.stats()  
+
+Result: 
+- The old master is still up and running but the slave nodes can't connect to it anymore. 
+- A new master is elected. 
+- The insert from Mongos Query rounter found some delay. It works after the new master is elected. 
+
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/round2/with--partition.png)
+
+
+### Test Case #5: Test Mongo with network partition happen - drop all incoming message on master node - Insert data at Master Node and Query data from all nodes
+    - Create a network partition, drop all the incoming message on the master node
+    - The master node still up and running but the slave nodes can not connect to master node
+    - Insert data at Master Node and Query data from all nodes   
+  
   Use the shard rs0 to test the network partition. 
   
   Open 3 bash terminal, each console is connecting to 1 of the 3 nodes on the shard rs0 replica set. 
   
-  Create a network partition - Using below command line to have iptable drop all incoming message. 
-  
+  Create a network partition - Using below command line to have iptable drop all incoming message at master node
+ 
       sudo iptables-save > $HOME/firewall.txt
       sudo iptables -A INPUT -s 10.0.2.0/24 -j DROP
   
@@ -377,7 +521,8 @@ https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/README.md
   
   - When the network partition happen, one of the slave nodes will be elected as master. 
   - After updated the data on the new master, the new master and the slave data are consisitant
-  - The stale data at old master can still be accessed if direct access the old master      
+  - The stale data at old master can still be accessed if direct access the old master (just for testing, on reality, the query won't go to old master directly)
+  - The stale data won't be accessed from the Mongos Query Rounter      
 
 One of the slave nodes will be elected as master. 
 
@@ -387,33 +532,42 @@ The new master and the slave data are consisitant
 
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/bad-network-rs-status-at-new-master.png)
 
-The stale data at old master can still be accessed if direct access the old master 
+The stale data can't be access from Mongo Query Rounter. It can can still be accessed if direct access the old master but on reality this direct access is not allowed. 
 
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/bad-network-rs-status-at-old-master.png)
          
-## 11.  Test Mongo Cluster with Network Partition Recovery
+### Test Case #6: Test the data insert and query during network partition recovery
 
-### Test Case #4: Test the data query after fixed/recovered network partition 
-   
-  Use the shard rs0 to test the network partition. 
+    - Reovery the network partition
+    - The new master is elected back to the old master
+    - Query the data I inserted at Test Case #4 during the network partition to see if it is there
+       
+  Use the shard rs0. 
   
-  Open 3 bash terminal, each console is connecting to 1 of the 3 nodes on the shard rs0 replica set. 
+  Open a bash terminal, it connects to the Mongos Query Router.
+  From there, using the Mongos Query Router as jump box, open bash window for 3 nodes on the shard rs0 replica set. 
+
+  Query the record at, Mongo Query Router. 
   
-  Recover the network partition - use below command line to recover the iptable drop
+        use cmpe281B
+        db.bios.find( { "name.first": "Test4" } )
 
-      sudo  iptables-restore < $HOME/firewall.txt
-     
-  Insert data on one node, query the data on all three nodes. 
-     
-  Result: 
+Result: 
 
-  - When the network partition recovered, the old master has been elected as the new master again. 
+  - The result is interesting. The "Test 4" data is missing!!! In another word, the data has been rolled back to the previous version.
+  - When the network partition recovered, the old master has been elected as the new master again.
+  - Check the data I inserted during the network partition, the data has been rolled back to the previous version. 
+  - All nodes are with consistent data. 
+ 
+See the offical document of MongoDB about the rollback during replica set failover
+      
+      A rollback reverts write operations on a former primary when the member rejoins its replica set after a failover. A rollback is necessary only if the primary had accepted write operations that the secondaries had not successfully replicated before the primary stepped down. When the primary rejoins the set as a secondary, it reverts, or ¡°rolls back,¡± its write operations to maintain database consistency with the other members.
+      MongoDB attempts to avoid rollbacks, which should be rare. When a rollback does occur, it is often the result of a network partition. Secondaries that can not keep up with the throughput of operations on the former primary, increase the size and impact of the rollback.
+      A rollback does not occur if the write operations replicate to another member of the replica set before the primary steps down and if that member remains available and accessible to a majority of the replica set.
 
-  - Check the data on all three nodes, the data are consistent after network partition recovery. 
+[Source: https://docs.mongodb.com/manual/core/replica-set-rollbacks/]
+      
 
-  - All nodes are with updated data. 
-     
-  The Mongo DB has make the data eventually consistent after a network partition recovery.    
+![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/round2/RollbackAfterPartitionRecovery.png)
 
-![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/mongoTest/bad-network-recovered-data-consistent.png)
  
