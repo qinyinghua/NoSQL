@@ -283,8 +283,10 @@ Go to Mongo Query Router, run:
 
 - How does the system function during normal mode (i.e. no partition)
 
-    Test Case #1: Test the data insert and query without network partition happen 
+    Test Case #1: Test the data insert and query without network partition happen
+     
     Test Case #2: Test the Mongo chararistic without network partition happen - Insert data at Master Node
+    
     Test Case #3: Test the Mongo chararistic without network partition happen - Insert data at Slave Node 
     
 - What happens to the master node during a partition? 
@@ -570,6 +572,11 @@ The stale data can't be access from Mongo Query Rounter. It can can still be acc
     - The new master is elected back to the old master
     - Query the data I inserted at Test Case #4 during the network partition to see if it is there
        
+  Recover the network partition at master node - use below command line to recover the iptable.
+
+      sudo  iptables-restore < $HOME/firewall.txt
+
+
   Use the shard rs0. 
   
   Open a bash terminal, it connects to the Mongos Query Router.
