@@ -175,6 +175,15 @@ The cluster contains 1 Mongo Query Router - installed as EC2 instance.
 
 ## 6.  Open the required port in the EC2 security groups.
 
+27017	The default port for mongod and mongos instances. You can change this port with port or --port.
+27018	The default port for mongod when running with --shardsvr command-line option or the shardsvr value for the clusterRole setting in a configuration file.
+27019	The default port for mongod when running with --configsvr command-line option or the configsvr value for the clusterRole setting in a configuration file.
+
+    [source: https://docs.mongodb.com/manual/reference/default-mongodb-port/]
+
+Notes: I have changed the default port 27018 to 27017. So only two ports open: 27017 and 27019.
+
+
 ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/5_mongodb_shardsvr_openPort_27018.gif)
 
 ## 7.  Form a Mongo Cluster 
