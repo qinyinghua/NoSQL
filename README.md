@@ -962,7 +962,7 @@ Check status.
 
   ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/16_mongodb_shard_sharded1Mdata_dbstatus_rs0_rs1_balance.gif)
 
-## Part IV - WOW Factors - Using Monitoring Tools to Capture NoSQL Network Partitioning
+## Part IV - Using Monitoring Tools to Capture NoSQL Network Partitioning
 
 I have installed the tools to monitor NoSQL database MongoDB and Cassandra, as well as the AWS EC2 instances where those NoSQL database running on. 
 
