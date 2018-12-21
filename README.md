@@ -1,11 +1,5 @@
 # CMPE281 - Personal NoSql Project - Main
 
-## Content
-
-[TOC]
-
-
-
 ## Objective
 
 In this project, I will be testing the Partition Tolerance of MongoDB and Cassandra NoSQL Database. 
