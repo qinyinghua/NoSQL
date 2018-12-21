@@ -1,5 +1,11 @@
 # CMPE281 - Personal NoSql Project - Main
 
+## Content
+
+[TOC]
+
+
+
 ## Objective
 
 In this project, I will be testing the Partition Tolerance of MongoDB and Cassandra NoSQL Database. 
@@ -962,7 +968,7 @@ Check status.
 
   ![](https://github.com/nguyensjsu/cmpe281-qinyinghua/blob/master/IndividualProject/installMongo/16_mongodb_shard_sharded1Mdata_dbstatus_rs0_rs1_balance.gif)
 
-## Part III - WOW Factors - Using Monitoring Tools to Capture NoSQL Network Partitioning
+## Part IV - WOW Factors - Using Monitoring Tools to Capture NoSQL Network Partitioning
 
 I have installed the tools to monitor NoSQL database MongoDB and Cassandra, as well as the AWS EC2 instances where those NoSQL database running on. 
 
@@ -970,7 +976,9 @@ All those Mongo and Cassandra EC2 instances are monitored. I want to correlate t
 
 ### Mongo Monitoring to Capture the Network Partitioning
 
-Here are my Mongo Cluster EC2 nodes. I am using the tools to monitor the CPU, Memory, Network I/O and Disk  I/O for all those EC2 instances. ![1545423590770](./README.assets/1545423590770.png)
+Here are my Mongo Cluster EC2 nodes. I am using the tools to monitor the CPU, Memory, Network I/O and Disk  I/O for all those EC2 instances.
+
+ ![1545423590770](./README.assets/1545423590770.png)
 
 
 
@@ -980,7 +988,7 @@ Here is the network partition at replica set 0 of Mongodb.
 
 Here is the 4M data load balancing in the Mongo shading database. 
 
-### ![1545423325432](./README.assets/1545423325432.png)
+![1545423325432](./README.assets/1545423325432.png)
 
 ### Cassandra Monitoring to Capture the Network Partitioning
 
