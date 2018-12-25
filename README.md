@@ -1,4 +1,4 @@
-# CMPE281 - Personal NoSql Project - Main
+# MongoDB and Cassandra Network Partitioning Comparision
 
 ## Objective
 
